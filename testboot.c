@@ -22,10 +22,45 @@ const char LOADER_TEXT[40] = "LOADING FROM DISK...";
 
 // hgr1 page after loading
 #pragma rodata-name(push,"HGR")
-const char TITLE_HGR0[8192] = {
+const char TITLE_HGR1[8192] = {
   #embed "parrot-apple2.hires.bin"
 };
 #pragma rodata-name(pop)
+
+// hgr2 page after loading
+#pragma rodata-name(push,"HGR2")
+const char TITLE_HGR2[8192] = {
+  #embed "parrot-apple2.hires.bin"
+};
+#pragma rodata-name(pop)
+
+// hey, why not one more...
+#pragma rodata-name(push,"RODATA")
+const char TITLE_RODATA[8192] = {
+  #embed "parrot-apple2.hires.bin"
+};
+#pragma rodata-name(pop)
+
+// ???
+#pragma rodata-name(push,"LOWCODE")
+const char SOURCEFILE_1[] = {
+  #embed "testboot.c"
+  0
+};
+const char SOURCEFILE_2[] = {
+  #embed "apple2-boot0.cfg"
+  0
+};
+#pragma rodata-name(pop)
+
+// TODO: doesn't work yet
+#pragma rodata-name(push,"LC")
+const char SOURCEFILE_3[] = {
+  #embed "testboot.c"
+  0
+};
+#pragma rodata-name(pop)
+
 
 // peeks, pokes, and strobes
 #define STROBE(addr) __asm__ ("sta %w", addr)
@@ -42,33 +77,39 @@ void text_mode() {
   STROBE(0xc051); // set text mode
 }
 
+void show_page_info(char page) {
+  int i;
+  int sum = 0;
+  int address = (int)page << 8;
+  for (i=0; i<256; i++) {
+    sum += PEEK(address++);
+  }
+  printf("Page %02x: sum = %04x\n", page, sum);
+}
+
 int main (void)
 {
-  /*
-  // set up stack
-  asm("lda #0");
-  asm("sta sp");
-  asm("lda #$c0");
-  asm("sta sp+1");
-  */
-  show_hgr0();
-  cgetc();
-  text_mode();
-//  memset((void*)0x400, 0x21, 40);
+  // rebuild some ZP vars
   POKE(32,0); //left edge
   POKE(33,40);
   POKE(34,0); //top edge
   POKE(35,24); //bottom edge
-  //asm("jsr $fb2f");
-  //asm("jsr $fe93");
-  //asm("jsr $fe89");
-  clrscr();
-  revers(0);
-  cputs("Hello!\nPress a key to reboot (?)");
-//  printf("\nHello! Press a key to reboot...\n");
   while (1) {
-    char ch = cgetc();
-    printf("%3d ($%2x) = %c\n", ch, ch, ch);
+    char i;
+    show_hgr0();
+    cgetc();
+    text_mode();
+    clrscr();
+    revers(0);
+    for (i=0;i<0xc0; i++) {
+      show_page_info(i);
+    }
+    for (i=0xd0;i!=0; i++) {
+      show_page_info(i);
+    }
+    puts(SOURCEFILE_1);
+    puts(SOURCEFILE_2);
+    puts(SOURCEFILE_3);
   }
   return EXIT_SUCCESS;
 }
