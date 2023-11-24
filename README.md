@@ -5,4 +5,4 @@ This is a demo of using [0boot](https://github.com/a2-4am/0boot/tree/master) and
 
 Thanks to the #embed keyword it only works in dev builds of 8bitworkshop, for now.
 
-[Open this project in 8bitworkshop](https://sehugg.github.io/8bitworkshop/redir.html?platform=apple2&githubURL=https%3A%2F%2Fgithub.com%2Fsehugg%2F0boot-cc65&file=testboot.c).
+[Open this project in 8bitworkshop](https://sehugg.github.io/8bitworkshop/?platform=apple2&githubURL=https%3A%2F%2Fgithub.com%2Fsehugg%2F0boot-cc65&file=testboot.c).
