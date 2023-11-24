@@ -123,12 +123,11 @@ int main (void)
   POKE(0X21,40);
   POKE(0x22,0); //top edge
   POKE(0x23,24); //bottom edge
+  // stack pointer
+  POKE(0x80,0);
+  POKE(0x81,0xc0);
   while (1) {
     char i;
-    show_hgr1();
-    wait_for_key();
-    show_hgr0();
-    wait_for_key();
     text_mode();
     clrscr();
     revers(0);
@@ -150,6 +149,9 @@ int main (void)
     }
     puts(SOURCEFILE_1);
     puts(SOURCEFILE_2);
+    wait_for_key();
+    show_hgr0();
+    wait_for_key();
   }
   return EXIT_SUCCESS;
 }

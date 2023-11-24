@@ -13,10 +13,9 @@ tracks      = 15       ; User-defined
 first_trk   = $01      ; User-defined
 address     = $04      ; User-defined, high byte of first page
 entry       = $800     ; User-defined
-sectors     = 12       ; User-defined, sectors to load from partial track (increase tracks count first)
+sectors     = 12      ; User-defined, sectors to load from partial track (increase tracks count first)
 interleave  = 1        ; User-defined, to retain .dsk sector ordering
-multi_regn  = 0        ; User-defined, load to non-sequential addresses
-skip_c0     = 1        ; set to 1 to skip over $c000-$cfff
+multi_regn  = 1        ; User-defined, load to non-sequential addresses
 
 version     = 4
 
@@ -196,10 +195,11 @@ HEADER:
 ; beginning with the second track
 ; (array size = tracks*2)
 region:
- .byte $10,0, $20,0, $30,0, $40,0
- .byte $50,0, $60,0, $70,0
- .byte $80,0, $90,0, $a0,0, $b0,0
+ .byte $14,0, $24,0, $34,0, $44,0
+ .byte $54,0, $64,0, $74,0
+ .byte $84,0, $94,0, $a4,0
  .byte $d0,0, $e0,0, $f0,0
+ .byte $b4,0
 .endif
 
 .if interleave=1
@@ -230,14 +230,6 @@ initsec:
         stx     <count
 rdpage:
         lda     #address
-.if skip_c0
-        cmp	#$c0
-        bne	@notc0
-        clc
-        adc	#$10
-        sta	rdpage+1
-@notc0:
-.endif
         sta     <(addrtbl-$f0), x
         inc     <(rdpage+1)
         inx
