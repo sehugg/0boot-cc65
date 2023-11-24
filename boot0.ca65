@@ -42,6 +42,7 @@ start_boot0:
         lda     #$5b            ;read-1
         pha
         bit     $c081 ; // Select ROM, write enable aux RAM bank 2.
+        bit     $c081 ; // gotta do it twice to write-enable
         rts
 
         ;the following TAY is a workaround for a CFFA bug

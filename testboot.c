@@ -13,7 +13,7 @@
 #include <apple2.h>
 
 // https://mirrors.apple2.org.za/ground.icaen.uiowa.edu/Collections/1WSW/MEGA.PEEKS.AND.POKES.html
-// https://6502disassembly.com/a2-rom/AutoF8ROM.html#SymCLRSCR
+// http://www.applelogic.org/files/LANGCARDMAN.pdf
 
 // text page during loading
 #pragma rodata-name(push,"TXT0")
@@ -34,19 +34,14 @@ const char TITLE_HGR2[8192] = {
 };
 #pragma rodata-name(pop)
 
-// hey, why not one more...
-#pragma rodata-name(push,"RODATA")
-const char TITLE_RODATA[8192] = {
-  #embed "parrot-apple2.hires.bin"
-};
-#pragma rodata-name(pop)
-
 // ???
-#pragma rodata-name(push,"LOWCODE")
+#pragma rodata-name(push,"CODE")
 const char SOURCEFILE_1[] = {
-  #embed "testboot.c"
+  #embed "apple2-boot0.cfg"
   0
 };
+#pragma rodata-name(pop)
+#pragma rodata-name(push,"LOWCODE")
 const char SOURCEFILE_2[] = {
   #embed "apple2-boot0.cfg"
   0
@@ -55,8 +50,12 @@ const char SOURCEFILE_2[] = {
 
 // TODO: doesn't work yet
 #pragma rodata-name(push,"LC")
+const char IMAGE_COPY_1[] = {
+  #embed "parrot-apple2.hires.bin"
+  0
+};
 const char SOURCEFILE_3[] = {
-  #embed "testboot.c"
+  #embed "apple2-boot0.cfg"
   0
 };
 #pragma rodata-name(pop)
@@ -64,11 +63,19 @@ const char SOURCEFILE_3[] = {
 
 // peeks, pokes, and strobes
 #define STROBE(addr) __asm__ ("sta %w", addr)
+#define RSTROBE(addr) __asm__ ("bit %w", addr)
 
 // clear screen and set graphics mode
 void show_hgr0() {
   STROBE(0xc052); // turn off mixed-mode
   STROBE(0xc054); // page 1
+  STROBE(0xc057); // hi-res
+  STROBE(0xc050); // set graphics mode
+}
+
+void show_hgr1() {
+  STROBE(0xc052); // turn off mixed-mode
+  STROBE(0xc055); // page 2
   STROBE(0xc057); // hi-res
   STROBE(0xc050); // set graphics mode
 }
@@ -87,20 +94,54 @@ void show_page_info(char page) {
   printf("Page %02x: sum = %04x\n", page, sum);
 }
 
+int compare_with_lc(const char* main, const char* lc, unsigned int len) {
+  int i;
+  
+//  RSTROBE(0xc080);
+  for (i=0; i<len; i++) {
+    if (*main++ != *lc++) return i+1;
+  }
+//  RSTROBE(0xc081);
+//  RSTROBE(0xc081);
+  return 0;
+}
+
+void wait_for_key() {
+  puts("\r\nPress any key...");
+  cgetc();
+  puts("\r\n");
+}
+
 int main (void)
 {
+  // write protect
+  RSTROBE(0xc080);
   // rebuild some ZP vars
-  POKE(32,0); //left edge
-  POKE(33,40);
-  POKE(34,0); //top edge
-  POKE(35,24); //bottom edge
+  POKE(0x28,0); // BASL
+  POKE(0x29,4);
+  POKE(0x20,0); //left edge
+  POKE(0X21,40);
+  POKE(0x22,0); //top edge
+  POKE(0x23,24); //bottom edge
   while (1) {
     char i;
+    show_hgr1();
+    wait_for_key();
     show_hgr0();
-    cgetc();
+    wait_for_key();
     text_mode();
     clrscr();
     revers(0);
+    puts("Checking data...\n");
+    printf("Check $2000/$4000: %d\n",
+      compare_with_lc(TITLE_HGR1, TITLE_HGR2, 0x2000));
+    printf("Check $2000/LC: %d\n",
+      compare_with_lc(TITLE_HGR1, IMAGE_COPY_1, 0x2000));
+    printf("Check CODE/LOWCODE: %d\n",
+      compare_with_lc(SOURCEFILE_1, SOURCEFILE_2, strlen(SOURCEFILE_1)));
+    printf("Check CODE/LC: %d\n",
+      compare_with_lc(SOURCEFILE_1, SOURCEFILE_3, strlen(SOURCEFILE_1)));
+    wait_for_key();
     for (i=0;i<0xc0; i++) {
       show_page_info(i);
     }
@@ -109,7 +150,6 @@ int main (void)
     }
     puts(SOURCEFILE_1);
     puts(SOURCEFILE_2);
-    puts(SOURCEFILE_3);
   }
   return EXIT_SUCCESS;
 }
